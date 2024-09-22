@@ -1,0 +1,6 @@
+numba
+tqdm
+tensorflow
+pandas
+matplotlib
+scipy
