@@ -50,7 +50,7 @@ zzz_tf_delt
 
 
 def CFE1():
-    vgg = model_from_json(open('E:/linqi_doc/feature_extractor_cf/autoencoder_architecture.json').read()) 
+    vgg = model_from_json(open('./autoencoder_architecture.json').read()) 
     vgg.load_weights('./autoencoder_weights.hdf5')
     
     block3_conv3_copy = Conv3D(filters=16, kernel_size=(3, 3, 3), padding='same',name='out_put_before_cactivation')
@@ -519,7 +519,7 @@ def PSNR( y_true, y_pred):
         """
         return -10.0 * K.log(K.mean(K.square(y_pred - y_true))) / K.log(10.0)    
   
-@jit
+# @jit
 def train_srgan(epochs=20000, batch_size=10,sample_interval=50):
         
         g_loss_store=[]
@@ -538,7 +538,7 @@ def train_srgan(epochs=20000, batch_size=10,sample_interval=50):
             generated_hrs = generator.predict(lr_data_input)
 
             #Train discriminator
-            discriminator_loss = discriminator.train_on_batch([generated_hrs,hr_3d_input],None)
+            discriminator_loss = discriminator.train_on_batch([generated_hrs,hr_3d_input],[[],[]])
            
             d_loss_store.append(discriminator_loss[0])
 
@@ -689,7 +689,7 @@ print(lr_data.shape)
 
 
 
-hr_data=np.load(file="./nor_channelflow_3d_100.npy")
+hr_data=np.load(file="nor_channelflow_3d_100.npy")
 print(hr_data.shape)
 
 # Learning rates 
