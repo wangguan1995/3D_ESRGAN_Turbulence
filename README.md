@@ -1,6 +1,14 @@
 # Just Do It
 ```
-$pip install -r requirements.txt     # install libs
+git clone https://github.com/wangguan1995/3D_ESRGAN_Turbulence.git
+cd 3D_ESRGAN_Turbulence
+checkout master
+
+wget https://dataset.bj.bcebos.com/PaddleScience/cylinder3D/3D_ESRGAN/data.zip
+unzip data.zip
+
+pip install -r requirements.txt     # install libs
+
 python nor_fluc3d.py                 # normalize data
 python ESRGAN_3D.py                  # train and plot png
 ```
