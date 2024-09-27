@@ -11,42 +11,22 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import griddata 
 from tensorflow.keras.models import model_from_json
 import os
-xyz=np.load(file="./channel_flow_2dyz_48x48.npy")
-z=np.reshape(xyz[:,0],(48,48))
-y=np.reshape(xyz[:,1],(48,48))
-z=z[0,:]
-y=y[:,0]
-y
-xx=[]
-yy=[]
-zz=[]
-xnew = np.linspace(0,6.25,64)
-ynew = y
-znew = np.linspace(0,3.2,48)
-for i in range(48):
-    for j in range(48):
-        for kk in range(64):
-                yy.append(ynew[i])
-                zz.append(znew[j])
-                xx.append(xnew[kk])
 
+def read_data():
+    xyz=np.load(file="./channel_flow_2dyz_48x48.npy")
+    ynew = np.loadtxt("./y.txt")
+    xnew = np.linspace(0,  6.25, 64)
+    znew = np.linspace(0,  3.2,  48)
+    Z, Y, X = np.meshgrid(znew, ynew, xnew)  
+    return X, Y, Z
+X, Y, Z = read_data()
 
-yy_np_0=np.array(yy)
-zz_np_0=np.array(zz)
-xx_np_0=np.array(xx)
-yyy=yy_np_0.reshape((48,48,64))
-zzz=zz_np_0.reshape((48,48,64))
-xxx=xx_np_0.reshape((48,48,64))
-yyy_tf=tf.convert_to_tensor(yyy,dtype=tf.float32)
-zzz_tf=tf.convert_to_tensor(zzz,dtype=tf.float32)
-xxx_tf=tf.convert_to_tensor(xxx,dtype=tf.float32)
+yyy_tf=tf.convert_to_tensor(Y,dtype=tf.float32)
+zzz_tf=tf.convert_to_tensor(Z,dtype=tf.float32)
+xxx_tf=tf.convert_to_tensor(X,dtype=tf.float32)
 xxx_tf_delt=tf.subtract(xxx_tf[:,:,1:],xxx_tf[:,:,:-1])
-xxx_tf_delt
 yyy_tf_delt=tf.subtract(yyy_tf[1:,:,:],yyy_tf[:-1,:,:])
 zzz_tf_delt=tf.subtract(zzz_tf[:,1:,:],zzz_tf[:,:-1,:])
-zzz_tf_delt
-
-
 
 
 def CFE1():
@@ -58,7 +38,7 @@ def CFE1():
     
     injection_model = Sequential(vgg.layers[:2] + [block3_conv3_copy])
     block3_conv3_copy.set_weights(vgg.layers[2].get_weights())
-    img = Input(shape=(48,48,64,3))
+    img = Input(shape=(x_hight_res,y_hight_res,z_hight_res,3))
     # Extract image features
     img_features = injection_model(img)
     # Create model and compile
@@ -73,7 +53,7 @@ def CFE2():
     block3_conv3_copy = Conv3D(filters=32, kernel_size=(3, 3, 3), padding='same',name='out_put_before_cactivation')
     injection_model = Sequential(vgg.layers[:5] + [block3_conv3_copy])
     block3_conv3_copy.set_weights(vgg.layers[5].get_weights())
-    img = Input(shape=(48,48,64,3))
+    img = Input(shape=(x_hight_res,y_hight_res,z_hight_res,3))
     # Extract image features
     img_features = injection_model(img)
     # Create model and compile
@@ -110,28 +90,28 @@ def build_generator():
             grad_v_mse=tf.zeros((1))
             grad_w_mse=tf.zeros((1))
             for i in range(8):
-                    upred=y_pred[i,:,:,:,0]
-                    utrue=y_true[i,:,:,:,0]
-                    d_upred=tf.subtract(upred[:,:,1:],upred[:,:,:-1])
-                    d_utrue=tf.subtract(utrue[:,:,1:],utrue[:,:,:-1])
-                    grad_u_pred=d_upred/xxx_tf_delt
-                    grad_u_ture=d_utrue/xxx_tf_delt
-                    grad_u_mse += tf.losses.mean_squared_error(grad_u_pred,grad_u_ture)
-                    vpred=y_pred[i,:,:,:,1]
-                    vtrue=y_true[i,:,:,:,1]
-                    d_vpred=tf.subtract(vpred[1:,:,:],vpred[:-1,:,:])
-                    d_vtrue=tf.subtract(vtrue[1:,:,:],vtrue[:-1,:,:])
-                    grad_v_pred=d_vpred/yyy_tf_delt
-                    grad_v_ture=d_vtrue/yyy_tf_delt 
-                    grad_v_mse += tf.losses.mean_squared_error(grad_v_pred,grad_v_ture)
-                    wpred=y_pred[i,:,:,:,2]
-                    wtrue=y_true[i,:,:,:,2]
-                    d_wpred=tf.subtract(wpred[:,1:,:],wpred[:,:-1,:])
-                    d_wtrue=tf.subtract(wtrue[:,1:,:],wtrue[:,:-1,:])
-                    grad_w_pred=d_wpred/zzz_tf_delt
-                    grad_w_ture=d_wtrue/zzz_tf_delt
-                    grad_w_mse += tf.losses.mean_squared_error(grad_w_pred,grad_w_ture)
-            
+                upred=y_pred[i,:,:,:,0]
+                utrue=y_true[i,:,:,:,0]
+                d_upred=tf.subtract(upred[:,:,1:],upred[:,:,:-1])
+                d_utrue=tf.subtract(utrue[:,:,1:],utrue[:,:,:-1])
+                grad_u_pred=d_upred/xxx_tf_delt
+                grad_u_ture=d_utrue/xxx_tf_delt
+                grad_u_mse += tf.losses.mean_squared_error(grad_u_pred,grad_u_ture)
+                vpred=y_pred[i,:,:,:,1]
+                vtrue=y_true[i,:,:,:,1]
+                d_vpred=tf.subtract(vpred[1:,:,:],vpred[:-1,:,:])
+                d_vtrue=tf.subtract(vtrue[1:,:,:],vtrue[:-1,:,:])
+                grad_v_pred=d_vpred/yyy_tf_delt
+                grad_v_ture=d_vtrue/yyy_tf_delt 
+                grad_v_mse += tf.losses.mean_squared_error(grad_v_pred,grad_v_ture)
+                wpred=y_pred[i,:,:,:,2]
+                wtrue=y_true[i,:,:,:,2]
+                d_wpred=tf.subtract(wpred[:,1:,:],wpred[:,:-1,:])
+                d_wtrue=tf.subtract(wtrue[:,1:,:],wtrue[:,:-1,:])
+                grad_w_pred=d_wpred/zzz_tf_delt
+                grad_w_ture=d_wtrue/zzz_tf_delt
+                grad_w_mse += tf.losses.mean_squared_error(grad_w_pred,grad_w_ture)
+        
 
             
             loss_grad=(grad_u_mse+grad_v_mse+grad_w_mse)/16/3
@@ -401,7 +381,7 @@ def build_generator():
 
         # Input low resolution image
         
-        data_input = Input((12,12,16,3))
+        data_input = Input((x_low_res, y_low_res, z_low_res,3)) # low res input (12,12,16,3)
         
         x_start = Conv3D(32, kernel_size=3, strides=1, padding='same')(data_input)
         
@@ -460,7 +440,7 @@ def build_discriminator():
                 return d
     
             # Input high resolution image
-            img = Input(shape=(48,48,64,3))
+            img = Input(shape=(x_hight_res,y_hight_res,z_hight_res,3))
     
             x = Conv3D(filters, kernel_size=3, strides=1, padding='same')(img)
             x = LeakyReLU(alpha=0.2)(x)
@@ -659,35 +639,22 @@ def train_srgan(epochs=20000, batch_size=10,sample_interval=50):
                         save_name_contour='./img2/'+save_name+'_'+c_name+'_'+str(epoch)+"_"+str(i)+'.png'
                         plt.savefig(save_name_contour)
                 
-                
-                
-                
-                
-
    
 name_save="low_resolution"
+
 # Low-resolution image dimensions
-
-length_lr = 12
-height_lr = 12
-width_lr = 16
-
-
-
+x_low_res = 12
+y_low_res = 12
+z_low_res = 16
 
 # High-resolution image dimensions
-upscaling_factor = 4 
-upscaling_times=2
-
-
-# # Low-resolution and high-resolution shapes
-
+x_hight_res = 48
+y_hight_res = 48
+z_hight_res = 64
 
 # Load hr and lr data
 lr_data=np.load(file="./nor_lr_channelflow_3d_100.npy")
 print(lr_data.shape)
-
-
 
 hr_data=np.load(file="nor_channelflow_3d_100.npy")
 print(hr_data.shape)
@@ -703,58 +670,17 @@ cofn3=2000 #pe 2000
 cofn4=1
 cofn5=1
 
-
 # Build the discriminator network
 discriminator=build_discriminator()
 # Build & compile the generator network
 generator = build_generator() 
-
-
-
 CFE1=CFE1()
 CFE2=CFE2()
-path_file = "./loss"
-if not os.path.exists(path_file):
-    os.mkdir(path_file)
-path_file = "./architecture" 
-if not os.path.exists(path_file):
-    os.mkdir(path_file)
-path_file = "./weights"
-if not os.path.exists(path_file):
-    os.mkdir(path_file)
-    
-path_file = "./img" 
-if not os.path.exists(path_file):
-    os.mkdir(path_file)
-    
-path_file = "./img2" 
-if not os.path.exists(path_file):
-    os.mkdir(path_file)    
-    
+directories = ["./loss", "./architecture", "./weights", "./img", "./img2"]  
+for directory in directories:  
+    os.makedirs(directory, exist_ok=True)
     
 if __name__ == '__main__':
     discriminator.summary()
     generator.summary()
     train_srgan(epochs=100000, batch_size=8, sample_interval=100)    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
