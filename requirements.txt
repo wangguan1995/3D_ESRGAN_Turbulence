@@ -1,6 +1,6 @@
 numba
 tqdm
-tensorflow
+tensorflow=2.11.0
 pandas
 matplotlib
 scipy
