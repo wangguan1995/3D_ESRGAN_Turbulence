@@ -12,14 +12,15 @@ from scipy.interpolate import griddata
 from tensorflow.keras.models import model_from_json
 import os
 
+# High resolution coordinates
 def read_data():
-    xyz=np.load(file="./channel_flow_2dyz_48x48.npy")
     ynew = np.loadtxt("./y.txt")
     xnew = np.linspace(0,  6.25, 64)
     znew = np.linspace(0,  3.2,  48)
     Z, Y, X = np.meshgrid(znew, ynew, xnew)  
     return X, Y, Z
 X, Y, Z = read_data()
+print("hight resolution cooridnates shape:", X.shape)
 
 yyy_tf=tf.convert_to_tensor(Y,dtype=tf.float32)
 zzz_tf=tf.convert_to_tensor(Z,dtype=tf.float32)
@@ -642,22 +643,25 @@ def train_srgan(epochs=20000, batch_size=10,sample_interval=50):
    
 name_save="low_resolution"
 
-# Low-resolution image dimensions
-x_low_res = 12
-y_low_res = 12
-z_low_res = 16
-
-# High-resolution image dimensions
-x_hight_res = 48
-y_hight_res = 48
-z_hight_res = 64
 
 # Load hr and lr data
 lr_data=np.load(file="./nor_lr_channelflow_3d_100.npy")
-print(lr_data.shape)
+print("low resolution data shape:", lr_data.shape)
 
 hr_data=np.load(file="nor_channelflow_3d_100.npy")
 print(hr_data.shape)
+print("hight resolution data shape:", hr_data.shape)
+
+# Low-resolution image dimensions
+x_low_res = lr_data.shape[1]
+y_low_res = lr_data.shape[2]
+z_low_res = lr_data.shape[3]
+
+# High-resolution image dimensions
+x_hight_res = hr_data.shape[1]
+y_hight_res = hr_data.shape[2]
+z_hight_res = hr_data.shape[3]
+
 
 # Learning rates 
 gen_lr = 1e-4
